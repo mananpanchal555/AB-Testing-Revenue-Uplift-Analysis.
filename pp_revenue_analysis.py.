@@ -1,0 +1,37 @@
+"""
+A/B Testing & Revenue Uplift Analysis (Difference-in-Differences)
+Objective: Quantify the financial impact of a new mobile app launch on customer spending.
+"""
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import ttest_ind
+
+# 1. Data Ingestion & Setup
+sns.set_theme(style="whitegrid")
+df = pd.read_csv('data_app.csv')
+
+# 2. Statistical Testing (T-Test)
+post_data = df[df['Post'] == 1]
+adopt_1 = post_data[post_data['Adopt'] == 1]['Spending']
+adopt_0 = post_data[post_data['Adopt'] == 0]['Spending']
+
+t_stat, p_val = ttest_ind(adopt_1, adopt_0)
+print(f"Revenue Uplift P-Value: {p_val}")
+if p_val < 0.05:
+    print("Insight: The revenue increase in the App Adopter cohort is statistically significant.")
+
+# 3. Difference-in-Differences (DiD) Visual Generation
+plt.figure(figsize=(10, 6))
+did_data = df.groupby(['Adopt', 'Post'])['Spending'].mean().reset_index()
+did_data['Adopt'] = did_data['Adopt'].replace({0: 'Non-Adopters (Control)', 1: 'App Adopters (Treatment)'})
+did_data['Post'] = did_data['Post'].replace({0: 'Pre-Launch', 1: 'Post-Launch'})
+
+sns.lineplot(data=did_data, x='Post', y='Spending', hue='Adopt', marker='o', markersize=10, linewidth=2.5)
+plt.title('Difference-in-Differences: Revenue Uplift Post-App Launch')
+plt.ylabel('Average Customer Spending ($)')
+plt.xlabel('Intervention Timeline')
+plt.tight_layout()
+plt.savefig('did_revenue_uplift.png')
+
+print("Pipeline execution complete. Assets generated.")
